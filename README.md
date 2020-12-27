@@ -18,12 +18,11 @@ The goal of this project is efficiently and accurately classifying images by fac
 
 
 
-# Project 2: Causal Inference
+# Project 2: Causal Inference Algorithms Evaluation (Python)
 
 
 Term: Fall 2020
 
-+ Projec title: Causal Inference Algorithms Evaluation (Python)
 + Team members (In alphabetical order)
 	+ Siyu Duan 
 	+ Yotam Segal 
@@ -58,6 +57,8 @@ Term: Fall 2018
 
 + Project summary:
 This project involves a traffic flow simulation in the two-interval highway.  The users can customize the number of lanes, maximum vehicle capacity per lane per minute, the number of booths in each interval, average booth processing rate.    The output is a simulation table which calculates the minute by minute volumes of vehicles arriving, departing, and waiting in the backup. 
+
+
 
 
 
