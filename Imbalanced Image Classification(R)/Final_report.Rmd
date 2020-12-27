@@ -1,0 +1,627 @@
+---
+title: "Prediction on Facial Expression using proposed algorithms"
+author: "Siyu Duan, Xingying Feng, Depeng Kong, Xinyuan Peng, Natalie Williams"
+output:
+  pdf_document: default
+  html_notebook: default
+editor_options: 
+  chunk_output_type: console
+---
+
+In your final repo, there should be an R markdown file that organizes **all computational steps** for evaluating your proposed Facial Expression Recognition framework. 
+
+This file is currently a template for running evaluation experiments. You should update it according to your codes but following precisely the same structure. 
+
+```{r message=FALSE}
+if(!require("EBImage")){
+  install.packages("BiocManager")
+}
+
+if(!require("R.matlab")){
+  install.packages("R.matlab")
+}
+if(!require("readxl")){
+  install.packages("readxl")
+}
+
+if(!require("dplyr")){
+  install.packages("dplyr")
+}
+if(!require("readxl")){
+  install.packages("readxl")
+}
+
+if(!require("ggplot2")){
+  install.packages("ggplot2")
+}
+
+if(!require("caret")){
+  install.packages("caret")
+}
+
+if(!require("glmnet")){
+  install.packages("glmnet")
+}
+
+if(!require("WeightedROC")){
+  install.packages("WeightedROC")
+}
+
+if(!require("AUC")){
+  install.packages("AUC")
+}
+
+if(!require("e1071")){
+  install.packages("e1071")
+}
+
+if(!require("randomForest")){
+  install.packages("randomForest")
+}
+
+if(!require("xgboost")){
+  install.packages("xgboost")
+}
+
+if(!require("tibble")){
+  install.packages("tibble")
+}
+
+if(!require("ROSE")){
+  install.packages("ROSE")
+}
+
+if(!require("ggplot2")){
+  install.packages("ggplot2")
+}
+
+if(!require("tidyverse")){
+  install.packages("tidyverse")
+}
+
+library(R.matlab)
+library(readxl)
+library(dplyr)
+library(BiocManager)
+library(ggplot2)
+library(caret)
+library(glmnet)
+library(WeightedROC)
+library(OpenImageR)
+library(AUC)
+library(e1071)
+library(randomForest)
+library(xgboost)
+library(tibble)
+library(ROSE)
+library(ggplot2)
+library(tidyverse)
+```
+
+### Step 0 set work directories
+```{r wkdir, eval=FALSE}
+set.seed(2020)
+setwd("~/Documents/GitHub/Fall2020-Project3-group_7/doc")
+#\setwd("~/GitHub/Fall2020-Project3-group_7/doc")
+#setwd("./")
+```
+
+Provide directories for training images. Training images and Training fiducial points will be in different subfolders. 
+```{r}
+train_dir <- "~/Downloads/train_set/"
+#train_dir <- "../data/train_set/" # This will be modified for different data sets.
+train_image_dir <- paste(train_dir, "images/", sep="")
+train_pt_dir <- paste(train_dir,  "points/", sep="")
+train_label_path <- paste(train_dir, "label.csv", sep="") 
+```
+
+### Step 1: set up controls for evaluation experiments.
+
+In this chunk, we have a set of controls for the evaluation experiments. 
+
++ (T/F) cross-validation on the training set
++ (T/F) reweighting the samples for training set 
++ (number) K, the number of CV folds
++ (T/F) process features for training set
++ (T/F) run evaluation on an independent test set
++ (T/F) process features for test set
+
+```{r exp_setup}
+run.cv <- F # run cross-validation on the training set
+sample.reweight <- TRUE # run sample reweighting in model training
+K <- 5  # number of CV folds
+run.feature.train <- TRUE # process features for training set
+run.test <- TRUE # run evaluation on an independent test set
+run.feature.test <- TRUE # process features for test set
+```
+
+
+### Step 2: import data and train-test split 
+```{r}
+#train-test split
+info <- read.csv(train_label_path)
+n <- nrow(info)
+n_train <- round(n*(4/5), 0)
+train_idx <- sample(info$Index, n_train, replace = F)
+test_idx <- setdiff(info$Index, train_idx)
+```
+
+Fiducial points are stored in matlab format. In this step, we read them and store them in a list.
+```{r read fiducial points}
+#function to read fiducial points
+#input: index
+#output: matrix of fiducial points corresponding to the index
+n_files <- length(list.files(train_image_dir))
+
+readMat.matrix <- function(index){
+     return(round(readMat(paste0(train_pt_dir, sprintf("%04d", index), ".mat"))[[1]],0))
+}
+
+#load fiducial points
+fiducial_pt_list <- lapply(1:n_files, readMat.matrix)
+
+save(fiducial_pt_list, file="../output/fiducial_pt_list.RData")
+```
+
+### Step 3: construct features and responses
+
++ The follow plots show how pairwise distance between fiducial points can work as feature for facial emotion recognition.
+
+  + In the first column, 78 fiducials points of each emotion are marked in order. 
+  + In the second column distributions of vertical distance between right pupil(1) and  right brow peak(21) are shown in  histograms. For example, the distance of an angry face tends to be shorter than that of a surprised face.
+  + The third column is the distributions of vertical distances between right mouth corner(50)
+and the midpoint of the upper lip(52).  For example, the distance of an happy face tends to be shorter than that of a sad face.
+
+![Figure1](../figs/feature_visualization.jpg)
+
+`feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features and responses that are required by all the models you are going to evaluate later. 
+  
+  + `feature.R`
+  + Input: list of images or fiducial point
+  + Output: an RData file that contains extracted features and corresponding responses
+
+```{r feature}
+source("../lib/feature.R")
+tm_feature_train <- NA
+if(run.feature.train){
+  tm_feature_train <- system.time(dat_train <- feature(fiducial_pt_list, train_idx))
+  save(dat_train, file="../output/feature_train.RData")
+}else{
+  load(file="../output/feature_train.RData")
+}
+
+tm_feature_test <- NA
+if(run.feature.test){
+  tm_feature_test <- system.time(dat_test <- feature(fiducial_pt_list, test_idx))
+  save(dat_test, file="../output/feature_test.RData")
+}else{
+  load(file="../output/feature_test.RData")
+}
+# transfer label column from factor to numeric
+dat_train$label <- as.numeric(dat_train$label)-1
+dat_test$label <- as.numeric(dat_test$label)-1
+```
+
+###Step 3.1: Rebalancing training data-Bootstrap Random Over-Sampling Examples Technique (ROSE)
+![Figure2](../figs/rose.jpg)
+source: https://arxiv.org/pdf/1801.10269.pdf
+```{r}
+dat_train_balanced_rose<-ROSE(label~., dat_train,seed=2020)$data
+table(dat_train_balanced_rose$label)
+```
+
+
+### Step 4: Train baseline model with training features and responses
+Call the train model and test model from library. 
+
+`train.R` and `test.R` should be wrappers for all your model training steps and your classification/prediction steps. 
+
++ `train.R`
+  + Input: a data frame containing features and labels and a parameter list.
+  + Output:a trained model
++ `test.R`
+  + Input: the fitted classification model using training data and processed features from testing images 
+  + Input: an R object that contains a trained classifier.
+  + Output: training model specification
+
+##### Step 4.1: Baseline Model - Gradient Boosting Machine(GBM) with default setting of parameters
+###### Step 4.1(a): Train GBM with default setting of parameters
+The defalut parameters are:
+
++ distribution = "bernoulli" (if the response has only 2 unique values, bernoulli is assumed)
++ n.trees = 100, 
++ shrinkage = 0.1, 
++ interaction.depth = 1,
++ cv. fold = 3
+
+```{r train_GBM_base}
+# load model built-in from lib
+source("../lib/train_GBM_base.R") 
+
+# fit train data
+tm_train_GBM_base = NA
+tm_train_GBM_base<- system.time(fit_train_GBM_base <- train_GBM_base(features= dat_train_balanced_rose))
+save(fit_train_GBM_base , file="../output/train_GBM_base.RData")
+```
+
+
+###### Step 4.1(b): Test GBM with default setting of parameters
+We predicted the test data and evaluated the performance of default GBM model.
+```{r test_gbm}
+### load models built
+source("../lib/test_GBM.R")
+### predict test data
+tm_test_GBM_base=NA
+if(run.test){
+  load(file="../output/train_GBM_base.RData")
+  tm_test_GBM_base <- system.time(prob_pred_GBM_base <- test_GBM(fit_train_GBM_base, dat_test))
+}
+pred_test_GBM_base = round(test_GBM(fit_train_GBM_base, dat_test),digit=0)
+accu_test_GBM_base <- mean(dat_test$label == pred_test_GBM_base)
+```
+
+Calculate weightedAUC for rebalanced data
+```{r}
+label_test <- as.integer(dat_test$label)
+weight_test <- rep(NA, length(label_test))
+for (v in unique(label_test)){
+  weight_test[label_test == v] = 0.5 * length(label_test) / length(label_test[label_test == v])
+}
+
+pred_test_GBM_base<-as.integer(pred_test_GBM_base)
+accu_GBM_base <- sum(weight_test * (pred_test_GBM_base== label_test)) / sum(weight_test)
+tpr.fpr <- WeightedROC(prob_pred_GBM_base, label_test, weight_test)
+auc_GBM_base <- WeightedAUC(tpr.fpr)
+```
+
+###### Step 4.1(c): Summary of GBM model
+```{r}
+cat("The AUC of model:  GBM_base", "is", auc_GBM_base, ".\n")
+cat("The accuracy of model: GBM_base on imbalanced testing data", "is",  accu_test_GBM_base*100, "%.\n")
+cat("The accuracy of model: GBM_base on balanced testing data", "is", accu_GBM_base*100, "%.\n")
+cat("Time for training model GBM_baseline = ", tm_train_GBM_base[1], "s \n")
+cat("Time for testing model GBM_baseline = ",tm_test_GBM_base[1], "s \n")
+```
+
+
+
+##### Step 4.2: Improved Baseline Model - Gradient Boosting Machine(GBM) with tuning parameters
+###### Step 4.2(a): Train GBM with with tuning parameters
+By trading off between running time and performance, we choose to use following parameters:
+
++ distribution = "bernoulli" (if the response has only 2 unique values, bernoulli is assumed)
++ n.trees = 200,
++ shrinkage = 0.1
++ interaction.depth = 3
++ cv. fold = 3
+```{r train_GBM_improved}
+# load model built-in from lib
+source("../lib/train_GBM_improved.R") 
+
+# fit train data
+tm_train_GBM_improved = NA
+tm_train_GBM_improved <- system.time(fit_train_GBM_improved <- train_GBM_improved(features= dat_train_balanced_rose))
+save(fit_train_GBM_improved , file="../output/train_GBM_improved.RData")
+```
+
+###### Step 4.2(b): Test improved GBM with with tuning parameters
+Predict the test data and evaluated the performance of improved GBM model.
+```{r test_gbm_impoved, fig.show='hide'}
+### load models built
+source("../lib/test_GBM.R")
+### predict test data
+tm_test_GBM_improved=NA
+if(run.test){
+  load(file="../output/train_GBM_improved.RData")
+  tm_test_GBM_improved <- system.time(prob_pred_GBM_improved<- test_GBM(fit_train_GBM_improved, dat_test))
+}
+pred_test_GBM_improved = round(test_GBM(fit_train_GBM_improved, dat_test),digit=0)
+accu_test_GBM_improved <- mean(dat_test$label == pred_test_GBM_improved)
+```
+
+Calculate weightedAUC on testing split
+```{r}
+label_pred_GBM_improved<-as.integer(pred_test_GBM_improved)
+accu_GBM_improved <- sum(weight_test * (label_pred_GBM_improved == label_test)) / sum(weight_test)
+#prob_pred <- lable_pred
+tpr.fpr <- WeightedROC(prob_pred_GBM_improved, label_test, weight_test)
+auc_GBM_improved <- WeightedAUC(tpr.fpr)
+
+```
+
+###### Step 4.2(c): Summary of Improved GBM model
+```{r}
+cat("The AUC of model after reweighting:  GBM_improved", "is", auc_GBM_improved, ".\n")
+cat("The accuracy of model: Improved GBM on imbalanced testing data", accu_test_GBM_improved*100, "%.\n")
+cat("The accuracy of model: Improved GBM on balanced testing data", "is", accu_GBM_improved*100, "%.\n")
+cat("Time for training model GBM_improved = ", tm_train_GBM_improved[1], "s \n")
+cat("Time for testing model GBM_improved = ",tm_test_GBM_improved[1], "s \n")
+```
+
+### Step 5: Other advanced models
+
+#### Step 5.1: SVM
+###### Step 5.1(a): Train SVM with with tuning parameters
+```{r SVM}
+source("../lib/svm.R")
+# Tune SVM
+set.seed(2020)
+#opt.svm <- svm_tune(dat_train_balanced_rose[sample(1:nrow(dat_train_balanced_rose), 
+#                                                   round(nrow(dat_train_balanced_rose)/4),
+#                                                   replace = F), ])
+# bestgamma = opt.svm$best.parameters$gamma
+# bestcost = opt.svm$best.parameters$cost
+
+# Train SVM
+tm_svm_train <- system.time(
+  svm_fit <- svm (dat_train_balanced_rose$label ~ .,
+         data = dat_train_balanced_rose,
+         gamma = 0.001,
+         cost = 0.021,
+         kernel = "linear",
+         cross = 10
+    )
+)
+save(svm_fit, file = "../output/train_svm.RData")
+```
+
+###### Step 5.1(b): Test SVM with with tuning parameters
+```{r}
+tm_svm_test=NA
+if(run.test){
+  load(file="../output/train_svm.RData")
+  tm_svm_test <- system.time(
+  svm_pred <- svm_test(svm_fit, dat_test))
+}
+
+# Calculate Accuracy
+aucc_test_svm = mean(round(svm_pred) == dat_test$label) # unweighted
+accu_svm <- sum(weight_test * (round(svm_pred) == label_test)) / sum(weight_test)
+
+# Calculate ROC AUC
+tpr.fpr <- WeightedROC(svm_pred, label_test, weight_test)
+auc_svm <- WeightedAUC(tpr.fpr)
+```
+
+###### Step 5.1(c): Summary of SVM
+```{r}
+
+cat("The AUC of model after reweighting:  SVM", "is", auc_svm, ".\n")
+cat("The accuracy of model: SVM on imbalanced testing data", "is", aucc_test_svm*100, "%.\n")
+cat("The accuracy of model: SVM on balanced testing data", "is", accu_svm*100, "%.\n")
+cat("Time for training model SVM = ", tm_svm_train[1], "s \n")
+cat("Time for testing model SVM = ",tm_svm_test[1], "s \n")
+```
+
+
+
+#### Step 5.2: Random Forest
+###### Step 5.2(a): Train RF with with tuning parameters
+```{r train Random Forest }
+source("../lib/rand_f.R")
+
+# training rf
+# ntree=1000,  nodesize=25, samplesize=nrow(trainx)
+tm_rfTrain <- system.time(
+  rf_fit <- rf_train(dat_train_balanced_rose,
+                     mtry = 77)
+)
+save(rf_fit, file = "../output/train_rf.RData")
+
+```
+
+
+###### Step 5.2(b): Test RF with with tuning parameters
+Calculate testing time and accuracy on tesing data
+```{r test Random Forest}
+# testing rf
+rf_test_pred=NA
+if(run.test){
+  load(file="../output/train_rf.RData")
+  tm_rfTest <- system.time(
+  rf_test_pred <- rf_test(model = rf_fit,
+                          testdf = dat_test))
+}
+
+
+accu_rf_test <- mean(round(rf_test_pred) == dat_test$label)
+```
+
+Calculate weightedAUC on testing split
+```{r}
+label_pred_rf<-round(rf_test_pred)
+accu_rf <- sum(weight_test * (label_pred_rf == label_test)) / sum(weight_test)
+#prob_pred <- lable_pred
+tpr.fpr <- WeightedROC(rf_test_pred, label_test, weight_test)
+auc_rf <- WeightedAUC(tpr.fpr)
+
+```
+
+
+###### Step 5.2(c): Summary of RF
+```{r}
+cat("The AUC of model after reweighting:  RF", "is", auc_rf, ".\n")
+cat("The accuracy of model: Random Forest on imbalanced testing data", "is", accu_rf_test *100, "%.\n")
+cat("The accuracy of model: Random Forest on balanced testing data", "is", accu_rf*100, "%.\n")
+cat("Time for training model Random Forest = ", tm_rfTrain[1], "s \n")
+cat("Time for testing model Random Forest = ",tm_rfTest[1], "s \n")
+```
+
+
+
+#### Step 5.3: XGB
+###### Step 5.3(a): Construct train matrix and test matrix for XGB model
+```{r XGB}
+labels <- dat_train_balanced_rose$label
+ts_labels <- dat_test$label
+new_tr <- model.matrix(~.+0,data = dat_train_balanced_rose[,-which(names(dat_train_balanced_rose) %in% c("label"))]) 
+new_ts <- model.matrix(~.+0,data = dat_test[,-which(names(dat_test) %in% c("label"))])
+#labels <- as.numeric(labels)-1
+ts_labels <- as.numeric(ts_labels)-1
+dtrain <- xgb.DMatrix(data = new_tr,label = labels) 
+dtest <- xgb.DMatrix(data = new_ts,label=ts_labels)
+```
+
+
+###### Step 5.3(b): Train XGB with with tuning parameters
+```{r message=False}
+xgb_train_time=NA
+xgb_train_time<-system.time(xgb <- xgboost (data = dtrain, booster = "gbtree", objective = "binary:logistic", eta=0.5, gamma=0.1, max_depth=4, min_child_weight=1, subsample=1, colsample_bytree=1, nrounds = 5))
+
+save(xgb, file = "../output/train_xgb.RData")
+```
+
+
+###### Step 5.3(c): Test XGB with with tuning parameters
+```{r}
+xgb_test_time = NA
+if(run.test){
+  load(file="../output/train_xgb.RData")
+  xgb_test_time<-system.time(xgb_pred <- predict(xgb, dtest))
+}
+
+err <- mean(as.numeric(xgb_pred > 0.5) != dat_test$label)
+aucc_test_xgb<- (1-err)*100
+
+```
+
+Calculate weightedAUC on testing split
+```{r}
+label_pred_xgb<-as.integer(round(xgb_pred))
+accu_xgb <- sum(weight_test * (label_pred_xgb == label_test)) / sum(weight_test)
+#prob_pred <- lable_pred
+tpr.fpr <- WeightedROC(xgb_pred, label_test, weight_test)
+auc_xgb <- WeightedAUC(tpr.fpr)
+```
+
+
+###### Step 5.3(d): Summary of XGB
+```{r}
+
+cat("The AUC of model after reweighting:  XGB", "is", auc_xgb, ".\n")
+cat("The accuracy of model: XGB on imbalanced testing data", "is", aucc_test_xgb, "%.\n")
+cat("The accuracy of model: XGB on balanced testing data", "is", accu_xgb*100, "%.\n")
+cat('The time of training xgb model is: ', xgb_train_time[1], 's \n')
+cat('The time of testing xgb model is: ', xgb_test_time[1], 's \n')
+
+```
+
+
+
+### Step 6:Conclusion
+###### Step 6.1：Summarize Running Time for all models
+Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited. 
+```{r running_time}
+
+feature_time<-tibble(
+  feature_extr_train_time=tm_feature_train[1], 
+  feature_extr_test_time=tm_feature_test[1]
+)
+
+save(feature_time, file = "../output/feature_extraction_time.RData")
+
+#training time for RF: 
+#Testing time for RF : 
+running_time<-tribble(
+  ~model, ~training_time, ~testing_time,
+  "GBM baseline", tm_train_GBM_base[1], tm_test_GBM_base[1],
+  "GBM improved", tm_train_GBM_improved[1], tm_test_GBM_improved[1],
+  "XGB",xgb_train_time[1], xgb_test_time[1],
+  "Random Forest", tm_rfTrain[1],tm_rfTest[1],
+  "SVM", tm_svm_train[1], tm_svm_test[1]
+)
+
+```
+
+
+###### Step 6.2：Summarize Accuracy on imbalanced and balanced testing split 
+```{r}
+Accuracy_imbalanced<-tribble(
+  ~model, ~accuracy_imbalanced,
+  "GBM baseline", accu_test_GBM_base*100,
+  "GBM improved",accu_test_GBM_improved*100,
+  "XGB",aucc_test_xgb,
+  "Random Forest", accu_rf_test ,
+  "SVM", aucc_test_svm*100
+)
+Accuracy_imbalanced
+
+Accuracy_balanced<-tribble(
+  ~model, ~accuracy_balanced,
+  "GBM baseline", accu_GBM_base*100,
+  "GBM improved",accu_GBM_improved*100,
+  "XGB",accu_xgb*100,
+  "Random Forest", accu_rf,
+  "SVM", accu_svm*100
+)
+Accuracy_balanced
+
+```
+
+###### Step 6.3：Summarize AUC for on balanced testing split 
+```{r}
+auc<-tribble(
+  ~model, ~auc_testing_set,
+  "GBM baseline", auc_GBM_base,
+  "GBM improved",auc_GBM_improved,
+  "XGB",auc_xgb,
+  "Random Forest", auc_rf,
+  "SVM", auc_svm
+)
+
+auc
+
+```
+
+Summary table
+```{r, summary table}
+Table<-running_time%>%
+  full_join(Accuracy_balanced, by="model")%>%
+  full_join(auc, by="model")
+
+Table
+feature_time
+save(Table, file = "../output/summary_table.RData")
+```
+
+
+###### Step 6.4：Base line and Final advanced model comparision 
+```{r}
+cat("Time for training feature extraction = ", tm_feature_train[1], "s \n")
+cat("Time for testing feature extraction = ",tm_feature_test[1], "s \n")
+
+#Baseline model：  GBM 
+cat("The AUC of model:  GBM_base", "is", auc_GBM_base, ".\n")
+cat("The accuracy of model: GBM_base on imbalanced testing data", "is",  accu_test_GBM_base*100, "%.\n")
+cat("The accuracy of model: GBM_base on balanced testing data", "is", accu_GBM_base*100, "%.\n")
+cat("Time for training model GBM_baseline = ", tm_train_GBM_base[1], "s \n")
+cat("Time for testing model GBM_baseline = ",tm_test_GBM_base[1], "s \n")
+
+#Advanced model：SVM 
+cat("The AUC of model after reweighting:  SVM", "is", auc_svm, ".\n")
+cat("The accuracy of model: SVM on imbalanced testing data", "is", aucc_test_svm*100, "%.\n")
+cat("The accuracy of model: SVM on balanced testing data", "is", accu_svm*100, "%.\n")
+cat("Time for training model SVM = ", tm_svm_train[1], "s \n")
+cat("Time for testing model SVM = ",tm_svm_test[1], "s \n")
+
+
+
+Table%>%filter(model %in% c("GBM baseline","SVM"))
+```
+
+
+###Reference
+- Du, S., Tao, Y., & Martinez, A. M. (2014). Compound facial expressions of emotion. Proceedings of the National Academy of Sciences, 111(15), E1454-E1462.
+
+
+
+
+
+
+
+
+
+
+
+
+
