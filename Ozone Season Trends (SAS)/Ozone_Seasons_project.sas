@@ -385,50 +385,7 @@ proc corr data = St491.interval_data;
 	var actualYearT actualYearT2;
 run;
 
-*Produce all models for beginning day by actual year to explore appropriate model;
-/*
-proc reg data = ST491.interval_data;
-	by cbsa_short;
-	model beginningDay = actualYear /dwprob;
-	model beginningDay = expActualYear /dwprob;
-	model beginningDay = negExpActualYear /dwprob;
-	model beginningDay = actualYearT actualYearT2 /dwprob;
-	model logBegDay = actualYear /dwprob;
-	model beginningDay = logActualYear /dwprob;
-	model logBegDay = logActualYear /dwprob;
-	model begDay2 = actualYear /dwprob;	
-	model begDayRt = actualYear /dwprob;
-	model begDayRt = expActualYear /dwprob;
-	model begDay2 = expActualYear /dwprob;
-	model begDayRt = negExpActualYear /dwprob;
-	model begDay2 = negExpActualYear /dwprob;
-run;
-quit;
-*/
 
-
-
-*Produce all models for end day by actual year to explore appropriate model;
-/*
-proc reg data = ST491.interval_data;
-	by cbsa_short;
-	where not (cbsa_short = "Los Angeles" and year = 2016); *Remove Los Angeles 2016 from the models as the data stops early in 2016 and the calculated value is incorrect;
-	model endDay = actualYear /dwprob;
-	model endDay = expActualYear /dwprob;
-	model endDay = negExpActualYear /dwprob;
-	model endDay = actualYearT actualYearT2 /dwprob;
-	model logEndDay = actualYear /dwprob;
-	model endDay = logActualYear /dwprob;
-	model logEndDay = logActualYear /dwprob;
-	model endDay2 = actualYear /dwprob;	
-	model endDayRt = actualYear /dwprob;
-	model endDayRt = expActualYear /dwprob;
-	model endDay2 = expActualYear /dwprob;
-	model endDayRt = negExpActualYear /dwprob;
-	model endDay2 = negExpActualYear /dwprob;
-run;
-quit;
-*/
 
 *Produce the robust regression models for beg day by actual year to determine appropriate model using robust estimates for parameters;
 /*
