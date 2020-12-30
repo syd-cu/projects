@@ -1,4 +1,4 @@
-# Project 1: Imbalanced Image Classification using Machine Learning (R) 
+# Project 1: Imbalanced Image Classification Using Machine Learning (R) 
 
 
 Term: Fall 2020
@@ -63,7 +63,7 @@ This project involves a traffic flow simulation in the two-interval highway.  Th
 
 
 
-# Project 4: Analysis of Ozone Season trends in the U.S.  (SAS)
+# Project 4: Analysis of Ozone Season Trends in the U.S.  (SAS)
 
 
 Term: Spring 2017
