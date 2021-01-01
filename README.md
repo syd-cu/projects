@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 # Project 1: Imbalanced Image Classification Using Machine Learning (R) 
+=======
+# Project 1: Imbalanced Image Classification using Machine Learning 
+>>>>>>> Stashed changes
 
 
 Term: Fall 2020
@@ -18,7 +22,7 @@ The goal of this project is efficiently and accurately classifying images by fac
 
 
 
-# Project 2: Causal Inference Algorithms Evaluation (Python)
+# Project 2: Causal Inference Algorithms Evaluation 
 
 
 Term: Fall 2020
@@ -50,7 +54,7 @@ PSM | highDim | 23.656 | -3.069 | 97.7%
 
 
 
-# Project 3: Traffic Flow Simulation (Python)
+# Project 3: Traffic Flow Simulation 
 
 
 Term: Fall 2018
@@ -63,7 +67,11 @@ This project involves a traffic flow simulation in the two-interval highway.  Th
 
 
 
+<<<<<<< Updated upstream
 # Project 4: Analysis of Ozone Season Trends in the U.S.  (SAS)
+=======
+# Project 4: Analysis of Ozone Season trends in the U.S.  
+>>>>>>> Stashed changes
 
 
 Term: Spring 2017
