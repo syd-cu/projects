@@ -1,4 +1,4 @@
-# Project 1: Imbalanced Image Classification using Machine Learning 
+# Project 1: Imbalanced Image Classification using Machine Learning (R project)
 
 
 
@@ -19,7 +19,7 @@ The goal of this project is efficiently and accurately classifying images by fac
 
 
 
-# Project 2: Causal Inference Algorithms Evaluation 
+# Project 2: Causal Inference Algorithms Evaluation (Python project) 
 
 
 Term: Fall 2020
@@ -51,10 +51,13 @@ PSM | highDim | 23.656 | -3.069 | 97.7%
 
 
 
-# Project 3: Traffic Flow Simulation 
+# Project 3: Traffic Flow Simulation (Python project)
 
 
 Term: Fall 2018
+
++ Author:
+Siyu Duan 
 
 + Project summary:
 This project involves a traffic flow simulation in the two-interval highway.  The users can customize the number of lanes, maximum vehicle capacity per lane per minute, the number of booths in each interval, average booth processing rate.    The output is a simulation table which calculates the minute by minute volumes of vehicles arriving, departing, and waiting in the backup. 
@@ -65,7 +68,7 @@ This project involves a traffic flow simulation in the two-interval highway.  Th
 
 
 
-# Project 4: Analysis of Ozone Season trends in the U.S.  
+# Project 4: Analysis of Ozone Season trends in the U.S.  (SAS project)
 
 
 
