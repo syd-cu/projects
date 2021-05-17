@@ -1,7 +1,6 @@
 # Project 1: Imbalanced Image Classification using Machine Learning (R project)
 
 
-
 Term: Fall 2020
 
 + Team members (In alphabetical order)
@@ -51,7 +50,46 @@ PSM | highDim | 23.656 | -3.069 | 97.7%
 
 
 
-# Project 3: Traffic Flow Simulation (Python project)
+# Project 3: Performance of tech industry during COVID-19 period (R project)
+
+
+Term: Fall 2020
+
++ Team members (In alphabetical order)
+	+ Siyu Duan 
+	+ Jingyuan Liu
+	+ Haonan Wen
+	
++ Project summary: 
+In this project, we have picked the 5 most representative types of tech companies including Streaming, E-commerce, Entertainment (Gaming), Videoconferencing, and integrated tech companies. We evaluated the companies’ performances mainly based on three measurements: stock closing price, quarterly revenue, and investors' Confidence Index. First, we look at the companies’ behave on the stock market. Moreover, we introduced the Confidence Index to evaluate investor confidence in the market. Finally, we also take the companies’ quarterly revenue into account. Based on the three measurements described above, we hope our work would provide some insight for those who look back at this unprecedented year. The final  bookdown source file is available here: https://syd-cu.github.io/tech_companies_during_covid-19/
+	
+
+*This repo was initially generated from a bookdown template available here: https://github.com/jtr13/EDAVtemplate.*	
+
+
+
+
+# Project 4: COVID-19 AS WE KNOW IT! (R shiny project)
+
+
+Term: Fall 2020
+
++ Team members (In alphabetical order)
+	+ Siyu Duan
+	+ Mengyao He
+	+ Wannian Lou
+	+ Sneha Swati
+	+ Luyao Sun
+	
+
++ Project summary: This project is titled COVID-19 as we know it because it is a play on words for Life as we know it. Our life has been turned upside down because of COVID. So many important and life changing events have occurred, odd facts about COVID have been spread and, our usual spots have been up rooted. This app provides the users with a timeline of all the events that have unfolded from Feb. 29th 2020 to Sep. 30th, 2020. It also helps to disprove the Presidents theory about temperature and its relationship to COVID cases. Lastly, this app helps users find a new and safe hangout spot/restaurant.  The app is available here:  https://columbiaproject2.shinyapps.io/Project_2_Group_7_COVID/
+
+
+
+
+
+
+# Project 5: Traffic Flow Simulation (Python project)
 
 
 Term: Fall 2018
@@ -66,9 +104,7 @@ This project involves a traffic flow simulation in the two-interval highway.  Th
 
 
 
-
-
-# Project 4: Analysis of Ozone Season trends in the U.S.  (SAS project)
+# Project 6: Analysis of Ozone Season trends in the U.S.  (SAS project)
 
 
 
